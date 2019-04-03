@@ -51,6 +51,7 @@ const int tetraminoPiecePositions[7][4][3][2] = {
 int currPosX;
 int currPosY;
 int currTetramino;
+int currRotation;
 
 void setup() {
   // setup LEDs
@@ -79,6 +80,7 @@ void newGame() {
   currPosX = 0;
   currPosY = 0;
   currTetramino = 0;
+  currRotation = 0;
   
   clearBoard();
   setPiece();
@@ -112,10 +114,7 @@ void putTetraminoOnBoard() {
    const int NUM_PIECES_PER_TETRAMINO = 4;
    const int X_INDEX = 0;
    const int Y_INDEX = 1;
-
-   // TODO - handle rotation later
-   const int currRotation = 0;
-
+  
     // each tetramino consists of 4 pieces
     // loop through each piece and find its relative x & y position
    for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
@@ -145,6 +144,50 @@ void putTetraminoOnBoard() {
     }
 }
 
+void moveIfClear(int posX, int posY, int rotation) {
+  if(!isBlocked(posX, posY, rotation) {
+    clearBoard();
+    currPosX = posX;
+    currPosY = posY;
+    currRotation = rotation;    
+  }
+}
+
+bool isBlocked(int posX, int posY, int rotation) {
+   const int NUM_PIECES_PER_TETRAMINO = 4;
+   const int X_INDEX = 0;
+   const int Y_INDEX = 1;
+  
+    // each tetramino consists of 4 pieces
+    // loop through each piece and find its relative x & y position
+   for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
+      int pieceXPos = 0;
+      int pieceYPos = 0;
+
+      const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+
+      // always uses position (0,0) for last piece (saves memory space)
+      // need to calculate the other pieces
+      if(tetraminoPiece != LAST_PIECE) {
+        pieceXPos = tetraminoPiecePositions[currTetramino][rotation][tetraminoPiece][X_INDEX];
+        pieceYPos = tetraminoPiecePositions[currTetramino][rotation][tetraminoPiece][Y_INDEX];
+      }
+
+      // add relative position to absolute position
+      int xPos = posX + pieceXPos;
+      int yPos = posY + pieceYPos;
+
+      bool xInBounds = xPos >= 0 && xPos < boardWidth;
+      if(!xInBounds) {
+        return true;
+      }
+      if(yPos >= boardHeight) {
+        return true;
+      }
+    }
+    return false;
+}
+
 void drawBoard() {
   for(int x = 0; x < boardWidth; x++) {
     for (int y = 0; y < boardHeight; y++) {
@@ -158,28 +201,34 @@ void drawBoard() {
 void moveLeft() {
 
   clearBoard();
-  currTetramino = 0;
+  currPosX--;
 }
 
 
 void moveRight() {
   clearBoard();
-  currTetramino = 1;
+  currPosX++;
 }
 
 void moveDown() {
   clearBoard();
-  currTetramino = 2;
+  currPosY++;
 }
 
 void spinClockwise() {
   clearBoard();
-  currTetramino = 3;
+  currRotation++;
+  if(currRotation > 3) {
+    currRotation = 0;
+  }
 }
 
 void spinCounterClockwise() {
   clearBoard();
-  currTetramino = 4;
+  currRotation--;
+  if(currRotation < 0) {
+    currRotation = 3;
+  }
 }
 
 
