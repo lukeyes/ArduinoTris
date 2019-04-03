@@ -107,10 +107,7 @@ void setPiece() {
 
 void runGame() {
 
-  handleInput();
-
-  putTetraminoOnBoard();
-   
+  handleInput();   
 }
 
 void putTetraminoOnBoard() {
@@ -239,7 +236,14 @@ void moveRight() {
 }
 
 void moveDown() {
-  moveIfClear(currPosX,currPosY+1,currRotation);
+  int newPosY = currPosY+1;
+  if(!isBlocked(currPosX, newPosY, currRotation)) {
+      currPosY = newPosY;
+  } else {
+      // put the tetramino on the board
+      putTetraminoOnBoard();
+      setPiece();
+  }
 }
 
 void spinClockwise() {
