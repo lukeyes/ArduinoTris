@@ -7,9 +7,8 @@
 const uint8_t pixelsDataPin = 10; // Yellow wire on Adafruit Pixels
 const uint8_t pixelsClockPin = 11; // Green wire on Adafruit Pixels
 
-
-const uint16_t boardWidth = 10;
-const uint16_t boardHeight = 20;
+const uint8_t boardWidth = 10;
+const uint8_t boardHeight = 20;
 
 //Defined constants that correspond with the keys in the controller class
 #define BUTTON_A 0
@@ -51,10 +50,10 @@ const int tetraminoPiecePositions[7][4][3][2] = {
   {{{-1,0},{1,0},{1,1}}, {{-1,1},{0,1},{0,-1}}, {{-1,-1},{-1,0},{1,0}}, {{0,1},{0,-1},{1,-1}}}
 };
 
-int currPosX;
-int currPosY;
-int currTetramino;
-int currRotation;
+int8_t currPosX;
+int8_t currPosY;
+uint8_t currTetramino;
+uint8_t currRotation;
 
 void setup() {
   // setup LEDs
@@ -90,8 +89,8 @@ void newGame() {
 }
 
 void clearBoard() {
-  for (int i = 0; i < boardWidth; i++) {
-    for (int j = 0; j < boardHeight; j++) {
+  for (uint8_t i = 0; i < boardWidth; i++) {
+    for (uint8_t j = 0; j < boardHeight; j++) {
       board[i][j] = 0;
     }
   }
@@ -111,13 +110,14 @@ void runGame() {
 }
 
 void putTetraminoOnBoard() {
+  
+   const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+
     // each tetramino consists of 4 pieces
     // loop through each piece and find its relative x & y position
-   for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
-      int pieceXPos = 0;
-      int pieceYPos = 0;
-
-      const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+   for(uint8_t tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
+      int8_t pieceXPos = 0;
+      int8_t pieceYPos = 0;
 
       // always uses position (0,0) for last piece (saves memory space)
       // need to calculate the other pieces
@@ -127,8 +127,8 @@ void putTetraminoOnBoard() {
       }
 
       // add relative position to absolute position
-      int xPos = currPosX + pieceXPos;
-      int yPos = currPosY + pieceYPos;
+      int8_t xPos = currPosX + pieceXPos;
+      int8_t yPos = currPosY + pieceYPos;
 
       bool xInBounds = xPos >= 0 && xPos < boardWidth;
       bool yInBounds = yPos >= 0 && yPos < boardHeight;
@@ -140,7 +140,32 @@ void putTetraminoOnBoard() {
     }
 }
 
-void moveIfClear(int posX, int posY, int rotation) {
+void clearFilledRows() {
+  for(uint8_t y = 0; y < boardHeight; y++) {
+    uint8_t numFilled = 0;
+    for(uint8_t x = 0; x < boardWidth; x++) {
+      if(board[x][y] != 0) {
+        numFilled++;
+      }
+    }
+
+    if(numFilled == boardWidth) {
+      // clear my row
+      for(uint8_t x = 0; x < boardWidth; x++) {
+        board[x][y] = 0;
+      }
+
+      // pull down all rows above me
+      for(uint8_t y2 = y-1; y2 >=0; y2--) {
+        for(uint8_t x = 0; x < boardWidth; x++) {
+          board[x][y2+1] = board[x][y2];
+        }
+      }
+    }    
+  }
+}
+
+void moveIfClear(int8_t posX, int8_t posY, uint8_t rotation) {
   if(!isBlocked(posX, posY, rotation)) {
     currPosX = posX;
     currPosY = posY;
@@ -148,15 +173,15 @@ void moveIfClear(int posX, int posY, int rotation) {
   }
 }
 
-bool isBlocked(int posX, int posY, int rotation) {  
+bool isBlocked(int8_t posX, int8_t posY, uint8_t rotation) {  
  
-     const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+     const uint8_t LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
 
     // each tetramino consists of 4 pieces
     // loop through each piece and find its relative x & y position
-   for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
-      int pieceXPos = 0;
-      int pieceYPos = 0;
+   for(uint8_t tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
+      int8_t pieceXPos = 0;
+      int8_t pieceYPos = 0;
 
       // always uses position (0,0) for last piece (saves memory space)
       // need to calculate the other pieces
@@ -166,8 +191,8 @@ bool isBlocked(int posX, int posY, int rotation) {
       }
 
       // add relative position to absolute position
-      int xPos = posX + pieceXPos;
-      int yPos = posY + pieceYPos;
+      int8_t xPos = posX + pieceXPos;
+      int8_t yPos = posY + pieceYPos;
 
       bool xInBounds = xPos >= 0 && xPos < boardWidth;
       if(!xInBounds) {
@@ -185,13 +210,14 @@ bool isBlocked(int posX, int posY, int rotation) {
 }
 
 void drawTetramino() {
+  
+    const uint8_t LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+
     // each tetramino consists of 4 pieces
     // loop through each piece and find its relative x & y position
-   for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
-      int pieceXPos = 0;
-      int pieceYPos = 0;
-
-      const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+   for(uint8_t tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
+      int8_t pieceXPos = 0;
+      int8_t pieceYPos = 0;
 
       // always uses position (0,0) for last piece (saves memory space)
       // need to calculate the other pieces
@@ -201,8 +227,8 @@ void drawTetramino() {
       }
 
       // add relative position to absolute position
-      int xPos = currPosX + pieceXPos;
-      int yPos = currPosY + pieceYPos;
+      int8_t xPos = currPosX + pieceXPos;
+      int8_t yPos = currPosY + pieceYPos;
 
       bool xInBounds = xPos >= 0 && xPos < boardWidth;
       bool yInBounds = yPos >= 0 && yPos < boardHeight;
@@ -215,8 +241,8 @@ void drawTetramino() {
 }
 
 void drawBoard() {
-  for(int x = 0; x < boardWidth; x++) {
-    for (int y = 0; y < boardHeight; y++) {
+  for(int8_t x = 0; x < boardWidth; x++) {
+    for (int8_t y = 0; y < boardHeight; y++) {
       strip.setPixelColor(x,y,board[x][y]);
     }
   }
@@ -236,18 +262,19 @@ void moveRight() {
 }
 
 void moveDown() {
-  int newPosY = currPosY+1;
+  uint8_t newPosY = currPosY+1;
   if(!isBlocked(currPosX, newPosY, currRotation)) {
       currPosY = newPosY;
   } else {
       // put the tetramino on the board
       putTetraminoOnBoard();
+      clearFilledRows();
       setPiece();
   }
 }
 
 void spinClockwise() {
-  int newRotation = currRotation+1;
+  uint8_t newRotation = currRotation+1;
   if(newRotation > 3) {
     newRotation = 0;
   }
@@ -255,7 +282,7 @@ void spinClockwise() {
 }
 
 void spinCounterClockwise() {
-  int newRotation = currRotation-1;
+  int8_t newRotation = currRotation-1;
   if(newRotation < 0) {
     newRotation = 3;
   }
@@ -292,17 +319,17 @@ void handleInput() {
 
 void updateController() {
   // update last frame button info
-  for(int i = 0; i < 8; i++) {
+  for(uint8_t i = 0; i < 8; i++) {
     lastButtonsPressed[i] = currentButtonsPressed[i];
   }
   controller.latch();
   // update current frame button info
-  for(int i = 0; i < 8; i++) {
+  for(uint8_t i = 0; i < 8; i++) {
     currentButtonsPressed[i] = controller.pressed(i);
   }
 }
 
-bool isControllerTriggered(int button) {
+bool isControllerTriggered(uint8_t button) {
   return(currentButtonsPressed[button] && !lastButtonsPressed[button]);
 }
 
