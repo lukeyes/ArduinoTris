@@ -35,7 +35,22 @@ Adafruit_WS2801 strip = Adafruit_WS2801(boardWidth, boardHeight, pixelsDataPin, 
 
 
 uint32_t board[boardWidth][boardHeight];
-uint32_t pieceColors[7] = {0xFF0000,0x00FF00,0x0000FF,0xFFFF00,0x00FFFF,0xFF00FF,0xFF7800};
+uint32_t tetraminoColors[7] = {0xFF0000,0x00FF00,0x0000FF,0xFFFF00,0x00FFFF,0xFF00FF,0xFF7800};
+
+//tetramino,rotation,piece,position
+const int tetraminoPiecePositions[7][4][3][2] = {
+  {{{-1,0},{1,0},{2,0}}, {{0,-1},{0,1},{0,2}}, {{-1,0},{1,0},{2,0}}, {{0,-1},{0,1},{0,2}}},
+  {{{-1,0},{1,0},{0,1}}, {{-1,0},{0,-1},{0,1}}, {{-1,0},{0,-1},{1,0}}, {{0,-1},{1,0},{0,1}}},
+  {{{-1,0},{-1,1},{0,1}}, {{-1,0},{-1,1},{0,1}}, {{-1,0},{-1,1},{0,1}}, {{-1,0},{-1,1},{0,1}}},
+  {{{1,0},{-1,1},{0,1}}, {{0,-1},{1,0},{1,1}}, {{1,0},{-1,1},{0,1}}, {{0,-1},{1,0},{1,1}}},
+  {{{-1,0},{0,1},{1,1}}, {{1,-1},{1,0},{0,1}}, {{-1,0},{0,1},{1,1}}, {{1,-1},{1,0},{0,1}}},
+  {{{-1,0},{1,0},{-1,1}}, {{-1,-1},{0,-1},{0,1}}, {{-1,0},{1,0},{1,-1}}, {{0,-1},{0,1},{1,1}}},
+  {{{-1,0},{1,0},{1,1}}, {{-1,1},{0,1},{0,-1}}, {{-1,-1},{-1,0},{1,0}}, {{0,1},{0,-1},{1,-1}}}
+};
+
+int currPosX;
+int currPosY;
+int currTetramino;
 
 void setup() {
   // setup LEDs
@@ -54,13 +69,19 @@ void loop() {
     newGame();
   }
 
+  runGame();  
+
   drawBoard();
 }
 
 //---------------------------- Methods for Starting New Game --------------------------------
 void newGame() {
-  clearBoard();  
-  randomizeBoard();
+  currPosX = 0;
+  currPosY = 0;
+  currTetramino = 0;
+  
+  clearBoard();
+  setPiece();
 }
 
 void clearBoard() {
@@ -71,17 +92,58 @@ void clearBoard() {
   }
 }
 
-void randomizeBoard() {
-  for (int i = 0; i < boardWidth; i++) {
-    for (int j = 0; j < boardHeight; j++) {
-      int colorIndex = random(7);;
-      uint32_t color = pieceColors[colorIndex];
-      board[i][j] = color;
-    }
-  }
+void setPiece() {
+  currPosX = 4;
+  currPosY = 0;
+  currTetramino=random(7);
 }
 
 //------------------------- Game Methods -------------------------------------------------------------------
+
+void runGame() {
+
+  handleInput();
+
+  putTetraminoOnBoard();
+   
+}
+
+void putTetraminoOnBoard() {
+   const int NUM_PIECES_PER_TETRAMINO = 4;
+   const int X_INDEX = 0;
+   const int Y_INDEX = 1;
+
+   // TODO - handle rotation later
+   const int currRotation = 0;
+
+    // each tetramino consists of 4 pieces
+    // loop through each piece and find its relative x & y position
+   for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
+      int pieceXPos = 0;
+      int pieceYPos = 0;
+
+      const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+
+      // always uses position (0,0) for last piece (saves memory space)
+      // need to calculate the other pieces
+      if(tetraminoPiece != LAST_PIECE) {
+        pieceXPos = tetraminoPiecePositions[currTetramino][currRotation][tetraminoPiece][X_INDEX];
+        pieceYPos = tetraminoPiecePositions[currTetramino][currRotation][tetraminoPiece][Y_INDEX];
+      }
+
+      // add relative position to absolute position
+      int xPos = currPosX + pieceXPos;
+      int yPos = currPosY + pieceYPos;
+
+      bool xInBounds = xPos >= 0 && xPos < boardWidth;
+      bool yInBounds = yPos >= 0 && yPos < boardHeight;
+
+      // draw on the board
+      if(xInBounds && yInBounds) {
+        board[xPos][yPos] = tetraminoColors[currTetramino];
+      }
+    }
+}
 
 void drawBoard() {
   for(int x = 0; x < boardWidth; x++) {
@@ -95,38 +157,29 @@ void drawBoard() {
 
 void moveLeft() {
 
-  // for now, set all blocks to RED
-  setAllBlockColors(0);
+  clearBoard();
+  currTetramino = 0;
 }
 
 
 void moveRight() {
-
-  // for now, set all blocks to BLUE
-  setAllBlockColors(1);
+  clearBoard();
+  currTetramino = 1;
 }
 
 void moveDown() {
-  // for now, set all block colors to GREEN
-  setAllBlockColors(2);
+  clearBoard();
+  currTetramino = 2;
 }
 
 void spinClockwise() {
-  // for now, set all block colors to YELLOW
-  setAllBlockColors(3);
+  clearBoard();
+  currTetramino = 3;
 }
 
 void spinCounterClockwise() {
-  setAllBlockColors(4);
-}
-
-void setAllBlockColors(int pieceColorIndex) {
-  for(int x = 0; x < boardWidth; x++) {
-    for(int y = 0; y < boardHeight; y++) {
-      uint32_t color = pieceColors[pieceColorIndex];
-      board[x][y] = color;
-    }
-  }
+  clearBoard();
+  currTetramino = 4;
 }
 
 
