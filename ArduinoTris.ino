@@ -255,7 +255,6 @@ void spinClockwise() {
 }
 
 void spinCounterClockwise() {
-  clearBoard();
   int newRotation = currRotation-1;
   if(newRotation < 0) {
     newRotation = 3;
