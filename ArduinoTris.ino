@@ -142,7 +142,6 @@ void putTetraminoOnBoard() {
 
 void moveIfClear(int posX, int posY, int rotation) {
   if(!isBlocked(posX, posY, rotation)) {
-    clearBoard();
     currPosX = posX;
     currPosY = posY;
     currRotation = rotation;    
@@ -150,13 +149,14 @@ void moveIfClear(int posX, int posY, int rotation) {
 }
 
 bool isBlocked(int posX, int posY, int rotation) {  
+ 
+     const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+
     // each tetramino consists of 4 pieces
     // loop through each piece and find its relative x & y position
    for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
       int pieceXPos = 0;
       int pieceYPos = 0;
-
-      const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
 
       // always uses position (0,0) for last piece (saves memory space)
       // need to calculate the other pieces
