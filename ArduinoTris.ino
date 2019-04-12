@@ -7,6 +7,9 @@
 const uint8_t pixelsDataPin = 10; // Yellow wire on Adafruit Pixels
 const uint8_t pixelsClockPin = 11; // Green wire on Adafruit Pixels
 
+const uint8_t pulse = 2;
+const uint8_t latch = 3;
+const uint8_t data = 4;
 
 const uint16_t boardWidth = 10;
 const uint16_t boardHeight = 20;
@@ -25,20 +28,18 @@ const uint16_t boardHeight = 20;
 #define STATE_PLAYING 0
 #define STATE_GAME_OVER 1
 
-const uint8_t pulse = 2;
-const uint8_t latch = 3;
-const uint8_t data = 4;
 const uint8_t NUM_PIECES_PER_TETRAMINO = 4;
+const uint8_t LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
 const uint8_t X_INDEX = 0;
 const uint8_t Y_INDEX = 1;
 
 Controller controller(latch, pulse, data);
 
+Adafruit_WS2801 strip = Adafruit_WS2801(boardWidth, boardHeight, pixelsDataPin, pixelsClockPin);
+
+
 bool lastButtonsPressed[8];
 bool currentButtonsPressed[8];
-
-
-Adafruit_WS2801 strip = Adafruit_WS2801(boardWidth, boardHeight, pixelsDataPin, pixelsClockPin);
 
 
 uint32_t board[boardWidth][boardHeight];
@@ -130,9 +131,7 @@ void setPiece() {
 }
 
 //------------------------- Game Methods -------------------------------------------------------------------
-
 void runGame() {
-
   handleInput();   
 }
 
@@ -141,9 +140,7 @@ void putTetraminoOnBoard() {
     // loop through each piece and find its relative x & y position
    for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
       int pieceXPos = 0;
-      int pieceYPos = 0;
-
-      const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
+      int pieceYPos = 0;      
 
       // always uses position (0,0) for last piece (saves memory space)
       // need to calculate the other pieces
@@ -166,18 +163,15 @@ void putTetraminoOnBoard() {
     }
 }
 
-void moveIfClear(int posX, int posY, int rotation) {
-  if(!isBlocked(posX, posY, rotation)) {
-    currPosX = posX;
-    currPosY = posY;
-    currRotation = rotation;    
+void moveIfClear(int newPosX, int newPosY, int newRotation) {
+  if(!isBlocked(newPosX, newPosY, newRotation)) {
+    currPosX = newPosX;
+    currPosY = newPosY;
+    currRotation = newRotation;    
   }
 }
 
-bool isBlocked(int posX, int posY, int rotation) {  
- 
-     const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
-
+bool isBlocked(int posX, int posY, int rotation) {
     // each tetramino consists of 4 pieces
     // loop through each piece and find its relative x & y position
    for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
@@ -202,7 +196,6 @@ bool isBlocked(int posX, int posY, int rotation) {
       if(yPos >= boardHeight) {
         return true;
       }
-
       if(yPos >= 0 && board[xPos][yPos] != 0) {
         return true;
       }
@@ -218,16 +211,16 @@ bool shouldEndGame(bool isBlocked) {
    for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
       int pieceYPos = 0;
 
-      // always uses position (0,0) for last piece (saves memory space)
-      // need to calculate the other pieces
+      // check if current tetramino is out of bounds in the y direction
+      // if so, then tetramino is blocked
+      // each tetramino consists of 4 pieces
+      // loop through each piece and find its x & y position
       if(tetraminoPiece != LAST_PIECE) {
-        pieceXPos = tetraminoPiecePositions[currTetramino][rotation][tetraminoPiece][X_INDEX];
-        pieceYPos = tetraminoPiecePositions[currTetramino][rotation][tetraminoPiece][Y_INDEX];
+          pieceYPos = tetraminoPiecePositions[currTetramino][currRotation][tetraminoPiece][Y_INDEX];
       }
 
       // add relative position to absolute position
-      int yPos = posY + pieceYPos;
-
+      int yPos = currPosY + pieceYPos;
       if(yPos <= 0) {
         return true;
       }
@@ -237,16 +230,12 @@ bool shouldEndGame(bool isBlocked) {
   return false;
 }
 
-
-
 void drawTetramino() {
     // each tetramino consists of 4 pieces
     // loop through each piece and find its relative x & y position
    for(int tetraminoPiece=0;tetraminoPiece<NUM_PIECES_PER_TETRAMINO;tetraminoPiece++){
       int pieceXPos = 0;
       int pieceYPos = 0;
-
-      const int LAST_PIECE = NUM_PIECES_PER_TETRAMINO - 1;
 
       // always uses position (0,0) for last piece (saves memory space)
       // need to calculate the other pieces
@@ -284,7 +273,6 @@ void drawBoard() {
 void moveLeft() {
   moveIfClear(currPosX-1,currPosY,currRotation);
 }
-
 
 void moveRight() {
   moveIfClear(currPosX+1,currPosY,currRotation);
