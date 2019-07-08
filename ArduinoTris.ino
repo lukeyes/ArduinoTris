@@ -1,3 +1,5 @@
+#include <LiquidCrystal_I2C.h>
+
 #include <nes.h>
 
 #include <SPI.h>
@@ -37,6 +39,7 @@ Controller controller(latch, pulse, data);
 
 Adafruit_WS2801 strip = Adafruit_WS2801(boardWidth, boardHeight, pixelsDataPin, pixelsClockPin);
 
+LiquidCrystal_I2C lcd(0x27, 16, 2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 bool lastButtonsPressed[8];
 bool currentButtonsPressed[8];
@@ -60,6 +63,7 @@ int currPosX;
 int currPosY;
 int currTetramino;
 int currRotation;
+uint32_t currScore;
 
 int currentState = -1;  // start with an invalid state to force hitting start
 
@@ -67,6 +71,16 @@ void setup() {
   // setup LEDs
   strip.begin();
   strip.show();
+
+  // set up lcd
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+
+  lcd.home();
+  lcd.print("Press start");
+  lcd.setCursor(0,1);
+  lcd.print("to play!");
 
   // "initialize" random
   randomSeed(300);
@@ -99,6 +113,11 @@ void setState(int newState) {
       break;
     case STATE_GAME_OVER:
       // todo - update LCD screen here
+      lcd.clear();
+      lcd.home();
+      lcd.print("Game Over");
+      lcd.setCursor(0,1);
+      lcd.print("Play again?");
       break;
   }
 
@@ -111,9 +130,11 @@ void newGame() {
   currPosY = 0;
   currTetramino = 0;
   currRotation = 0;
+  currScore = 0;
   
   clearBoard();
   setPiece();
+  updateDisplay();
 }
 
 void clearBoard() {
@@ -312,6 +333,7 @@ void spinCounterClockwise() {
 }
 
 void clearFilledRows() {
+  int numLines = 0;
   for(int y = 0; y < boardHeight; y++) {
     int numFilled = 0;
     for(int x = 0; x < boardWidth; x++) {
@@ -326,6 +348,8 @@ void clearFilledRows() {
         board[x][y] = 0;
       }
 
+      numLines++;
+
       // pull down all rows above me
       for(int y2 = y-1; y2 >=0; y2--) {
         for(int x = 0; x < boardWidth; x++) {
@@ -334,7 +358,26 @@ void clearFilledRows() {
       }
     }    
   }
+
+  if(numLines > 0) {
+    uint32_t score = 10 * numLines * numLines;
+    increaseScore(score);
+  }
 }
+
+void increaseScore(uint32_t amount) {
+  currScore += amount;
+  updateDisplay();
+}
+
+void updateDisplay() {
+  lcd.clear();
+  lcd.home();
+  lcd.print("Score:");
+  lcd.setCursor(0,1);
+  lcd.print(currScore);
+}
+
 
 //----------------------- Input Methods -----------------------------------------------------------------
 
@@ -378,4 +421,3 @@ void updateController() {
 bool isControllerTriggered(int button) {
   return(currentButtonsPressed[button] && !lastButtonsPressed[button]);
 }
-
